@@ -128,6 +128,16 @@ init_bootloader() {
 	part="$1"
 	mode="$2"
 
+	case "$mode" in
+		''|grub) ;; # default systemd-boot or explicit grub-on-ESP
+		*)
+			warn "E: unknown mode '$mode' - must be empty or 'grub'."
+			warn ""
+			usage "init"
+			exit 1
+		;;
+	esac
+
 	_get_partition_info "$part"
 
 	if [ -z "$PARTTYPE" ] || [ "$PARTTYPE" != "$ESPTYPE" ]; then
