@@ -78,6 +78,8 @@ update_esp_func() {
 	mount -t vfat -o umask=0077 "${path}" "${mountpoint}" || \
 		{ warn "mount of ${path} failed - skipping"; return; }
 
+	# reset per ESP, an earlier GRUB ESP must not decide the mode of this one
+	grub=
 	if [ -e "${mountpoint}/EFI/proxmox/grubx64.efi" ]; then
 		grub=1
 	fi
