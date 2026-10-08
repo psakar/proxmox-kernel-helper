@@ -29,8 +29,13 @@ case "$1" in
         ;;
     stop)
         ;;
+    status)
+        # like the unit's RemainAfterExit=yes: nothing keeps running, the
+        # service is OK once it ran (or had nothing to do)
+        exit 0
+        ;;
     *)
-        echo "Usage: /etc/init.d/proxmox-boot-cleanup {start|stop|restart|force-reload}" >&2
+        echo "Usage: /etc/init.d/proxmox-boot-cleanup {start|stop|status|restart|force-reload}" >&2
         exit 3
         ;;
 esac
