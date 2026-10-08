@@ -1,0 +1,38 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          proxmox-boot-cleanup
+# Required-Start:    $local_fs
+# Required-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:
+# Short-Description: Clean up bootloader next-boot setting
+# Description:       Unpins a kernel pinned for the next boot only
+#                    (proxmox-boot-tool kernel pin --next-boot), once that
+#                    boot happened, and refreshes the boot loader entries.
+### END INIT INFO
+
+# LSB counterpart of proxmox-boot-cleanup.service, only installed by the
+# pkg.proxmox-kernel-helper.lsbservice build (see debian/rules). A one-shot
+# action at boot: there is nothing to stop.
+
+PIN=/etc/kernel/next-boot-pin
+
+. /lib/lsb/init-functions
+
+case "$1" in
+    start|restart|force-reload)
+        # ConditionPathExists=
+        [ -e "$PIN" ] || exit 0
+        log_action_msg "Cleaning up bootloader next-boot setting"
+        /usr/sbin/proxmox-boot-tool kernel unpin --next-boot || exit 1
+        /usr/sbin/proxmox-boot-tool refresh || exit 1
+        ;;
+    stop)
+        ;;
+    *)
+        echo "Usage: /etc/init.d/proxmox-boot-cleanup {start|stop|restart|force-reload}" >&2
+        exit 3
+        ;;
+esac
+
+exit 0

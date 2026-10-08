@@ -4,6 +4,16 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+# The pkg.proxmox-kernel-helper.lsbservice build profile is for Devuan and
+# other systemd-free Debian derivatives (see pve-common's and pve-manager's
+# pkg.*.lsbservice profiles): it installs an LSB init script mirroring
+# proxmox-boot-cleanup.service instead of it, and the package doesn't depend
+# on systemd. To build this variant, run:
+#   dpkg-buildpackage -b -us -uc -Ppkg.proxmox-kernel-helper.lsbservice
+ifneq (,$(filter pkg.proxmox-kernel-helper.lsbservice,$(DEB_BUILD_PROFILES)))
+LSBSERVICE = 1
+endif
+
 %:
 	dh $@
 
@@ -11,8 +21,24 @@ override_dh_install:
 	mv debian/proxmox-kernel-helper debian/tmp
 	dh_install
 
+ifdef LSBSERVICE
+# installed by debian/install
+execute_after_dh_install:
+	rm -rf debian/proxmox-kernel-helper/usr/lib/systemd
+
+# a one-shot action at boot, like the unit (--no-start)
+execute_after_dh_installinit:
+	dh_installinit --name=proxmox-boot-cleanup --no-start
+
+override_dh_installsystemd:
+
+execute_after_dh_lintian:
+	cat debian/lintian-overrides.lsbservice \
+	    >>debian/proxmox-kernel-helper/usr/share/lintian/overrides/proxmox-kernel-helper
+else
 override_dh_installsystemd:
 	dh_installsystemd --no-start
+endif
 
 .PHONY: build clean
 build clean:
