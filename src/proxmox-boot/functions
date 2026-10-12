@@ -130,11 +130,17 @@ set_grub_default() {
 	if [ -z "${kver}" ]; then
 		rm -f "${GRUB_PIN_SNIPPET}"
 	else
-		# grub menu entry ids contain the internal root-device id (e.g. for zfs the GUID of
-		# the pool printed in hex) as this is independent of the ESP (or grub location)
-		# take it from /boot/grub/grub.cfg
-		root_devid=$(sed -rn "s/.*gnulinux-advanced-(.+)['] \{$/\1/p" \
-			/boot/grub/grub.cfg)
+		# grub menu entry ids contain the internal root-device id, derive it the same way as
+		# /etc/grub.d/10_linux, including the /etc/default/grub settings it gets passed
+		root_devid=$(
+			. /usr/share/grub/grub-mkconfig_lib
+			GRUB_DEVICE=$("${grub_probe}" --target=device /)
+			# any output of the defaults must not end up in the captured id
+			for cfg in /etc/default/grub /etc/default/grub.d/*.cfg; do
+				if [ -e "${cfg}" ]; then . "${cfg}" >&2; fi
+			done
+			grub_get_device_id "${GRUB_DEVICE}"
+		)
 		entry="gnulinux-advanced-${root_devid}>gnulinux-${kver}-advanced-${root_devid}"
 		echo "GRUB_DEFAULT=\"${entry}\"" > "${GRUB_PIN_SNIPPET}"
 	fi
