@@ -212,6 +212,14 @@ init_bootloader() {
 			echo "timeout 3" > "$esp_mp/$PMX_LOADER_CONF.tmp"
 			echo "default proxmox-*" >> "$esp_mp/$PMX_LOADER_CONF.tmp"
 			mv "$esp_mp/$PMX_LOADER_CONF.tmp" "$esp_mp/$PMX_LOADER_CONF"
+			# reinit is not followed by a refresh, so apply a kernel pin like the hook does
+			pinned_kernel=$(get_first_line "${PINNED_KERNEL_CONF}")
+			if [ -e "${NEXT_BOOT_PIN}" ]; then
+				pinned_kernel=$(get_first_line "${NEXT_BOOT_PIN}")
+			fi
+			if [ -n "${pinned_kernel}" ]; then
+				set_systemd_boot_default "$esp_mp" "${pinned_kernel}"
+			fi
 			memtest_conf="$esp_mp/loader/entries/$memtest.conf"
 			if [ -f "/boot/$memtest" ]; then
 				echo "Adding $memtest .."
