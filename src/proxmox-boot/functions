@@ -132,16 +132,23 @@ set_grub_default() {
 	else
 		# grub menu entry ids contain the internal root-device id, derive it the same way as
 		# /etc/grub.d/10_linux, including the /etc/default/grub settings it gets passed
-		root_devid=$(
+		grub_settings=$(
 			. /usr/share/grub/grub-mkconfig_lib
 			GRUB_DEVICE=$("${grub_probe}" --target=device /)
-			# any output of the defaults must not end up in the captured id
+			# any output of the defaults must not end up in the captured settings
 			for cfg in /etc/default/grub /etc/default/grub.d/*.cfg; do
 				if [ -e "${cfg}" ]; then . "${cfg}" >&2; fi
 			done
 			grub_get_device_id "${GRUB_DEVICE}"
+			echo "${GRUB_DISABLE_SUBMENU}"
 		)
-		entry="gnulinux-advanced-${root_devid}>gnulinux-${kver}-advanced-${root_devid}"
+		root_devid=$(echo "${grub_settings}" | sed -n 1p)
+		entry="gnulinux-${kver}-advanced-${root_devid}"
+		# 10_linux skips the submenu if disabled, accepting 'y' and 'yes' too
+		case "$(echo "${grub_settings}" | sed -n 2p)" in
+			true|y|yes) ;;
+			*) entry="gnulinux-advanced-${root_devid}>${entry}" ;;
+		esac
 		echo "GRUB_DEFAULT=\"${entry}\"" > "${GRUB_PIN_SNIPPET}"
 	fi
 }
