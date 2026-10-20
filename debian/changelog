@@ -1,3 +1,32 @@
+proxmox-kernel-helper (9.2.1) trixie; urgency=medium
+
+  * proxmox-boot: fix UEFI setups whose ESPs use different boot loaders, for
+    example after replacing a disk and initializing its ESP with GRUB while
+    the others use systemd-boot. Every systemd-boot ESP listed after a GRUB
+    ESP in /etc/kernel/proxmox-boot-uuids was affected:
+    - kernel updates skipped them, leaving them with outdated kernels.
+    - reinit, which also runs on upgrades of this package and of the boot
+      loader packages, switched them over to GRUB. ESPs switched that way
+      keep using GRUB. To move them back to systemd-boot, format and
+      initialize them again with proxmox-boot-tool.
+
+  * proxmox-boot-tool init: reject unknown boot loader modes instead of
+    silently setting up systemd-boot, for example on a typo like 'gurb'.
+
+  * proxmox-boot-tool kernel pin: fix cases where the pinned kernel was not
+    booted:
+    - with GRUB, determine the boot entry ID from the current root device,
+      like update-grub does, instead of taking it from the existing grub.cfg.
+      Pinning failed if this ID changed with the next update-grub run, for
+      example when the device names of a ZFS root pool changed due to renamed
+      NVMe devices or an attached mirror disk.
+    - with GRUB, honor GRUB_DISABLE_SUBMENU, which places the kernel entries
+      outside of the "Advanced options" submenu.
+    - with systemd-boot, keep the pin when the ESPs get re-initialized, for
+      example on upgrades of the systemd-boot-efi package.
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 20 Oct 2026 20:46:17 +0200
+
 proxmox-kernel-helper (9.2.0) trixie; urgency=medium
 
   * fix #7223: proxmox-boot: add memtest86 as entry to all boot-loaders.
